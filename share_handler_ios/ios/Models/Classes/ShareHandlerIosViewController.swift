@@ -61,35 +61,55 @@ open class ShareHandlerIosViewController: UIViewController {
         extensionContext!.completeRequest(returningItems: [], completionHandler: nil)
     }
 
-    func handleInputItems() async {
-        if let content = extensionContext!.inputItems[0] as? NSExtensionItem {
-            if let contents = content.attachments {
-                for (index, attachment) in (contents).enumerated() {
-                    do {
-                        if attachment.hasItemConformingToTypeIdentifier(imageContentType) {
-                            try await handleImages(content: content, attachment: attachment, index: index)
-                        } else if attachment.hasItemConformingToTypeIdentifier(movieContentType) {
-                            try await handleVideos(content: content, attachment: attachment, index: index)
-                        } else if attachment.hasItemConformingToTypeIdentifier(fileURLType){
-                            try await handleFiles(content: content, attachment: attachment, index: index)
-                        } else if attachment.hasItemConformingToTypeIdentifier(urlContentType) {
-                            try await handleUrl(content: content, attachment: attachment, index: index)
-                        } else if attachment.hasItemConformingToTypeIdentifier(textContentType) {
-                            try await handleText(content: content, attachment: attachment, index: index)
-                        } else if attachment.hasItemConformingToTypeIdentifier(dataContentType) {
-                            try await handleData(content: content, attachment: attachment, index: index)
-                        } else {
-                            print("Attachment not handled with registered type identifiers: \(attachment.registeredTypeIdentifiers)")
-                        }
-                    } catch {
-                        self.dismissWithError()
-                    }
-
-                }
+  func handleInputItems() async {
+    if let content = extensionContext!.inputItems[0] as? NSExtensionItem {
+      if let contents = content.attachments {
+        for (index, attachment) in (contents).enumerated() {
+          do {
+            //                        if attachment.hasItemConformingToTypeIdentifier(imageContentType) {
+            //                            try await handleImages(content: content, attachment: attachment, index: index)
+            //                        } else if attachment.hasItemConformingToTypeIdentifier(movieContentType) {
+            //                            try await handleVideos(content: content, attachment: attachment, index: index)
+            //                        } else
+            
+            guard let firstType = attachment.registeredTypeIdentifiers.first else {
+              dismissWithError()
+              return
             }
-            redirectToHostApp()
+            let data = try await attachment.loadItem(forTypeIdentifier: firstType, options: nil)
+            
+            if let url = data as? URL {
+              // Always copy
+              let fileName = getFileName(from :url, type: .file)
+              let newFileUrl = getNewFileUrl(fileName: fileName)
+              let copied = copyFile(at: url, to: newFileUrl)
+              if (copied) {
+                sharedAttachments.append(SharedAttachment.init(path:  newFileUrl.absoluteString, type: .file))
+              }
+            } else {
+              dismissWithError()
+            }
+            
+//            if attachment.hasItemConformingToTypeIdentifier(fileURLType) {
+//              try await handleFiles(content: content, attachment: attachment, index: index)
+//            } else if attachment.hasItemConformingToTypeIdentifier(urlContentType) {
+//              try await handleUrl(content: content, attachment: attachment, index: index)
+//            } else if attachment.hasItemConformingToTypeIdentifier(textContentType) {
+//              try await handleText(content: content, attachment: attachment, index: index)
+//            } else if attachment.hasItemConformingToTypeIdentifier(dataContentType) {
+//              try await handleData(content: content, attachment: attachment, index: index)
+//            } else {
+//              print("Attachment not handled with registered type identifiers: \(attachment.registeredTypeIdentifiers)")
+//            }
+          } catch {
+            self.dismissWithError()
+          }
+          
         }
+      }
+      redirectToHostApp()
     }
+  }
 
     public func getNewFileUrl(fileName: String) -> URL {
         let newFileUrl = FileManager.default

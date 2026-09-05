@@ -95,6 +95,9 @@ open class ShareHandlerIosViewController: UIViewController {
         let containerUrl = FileManager.default
             .containerURL(forSecurityApplicationGroupIdentifier: ShareHandlerIosViewController.appGroupId)!
         let sharedFilesUrl = containerUrl.appendingPathComponent("flt_share_handler", isDirectory: true)
+
+        print("[share_handler] Shared files dir URL: \(sharedFilesUrl) | App Group ID: \(ShareHandlerIosViewController.appGroupId)")
+
         try FileManager.default.createDirectory(at: sharedFilesUrl, withIntermediateDirectories: true)
         return sharedFilesUrl.appendingPathComponent(fileName)
     }

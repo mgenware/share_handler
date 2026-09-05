@@ -9,19 +9,19 @@ environment:
 
 flutter:
   plugin:
-    platforms: 
+    platforms:
       android:
-        default_package: share_handler_android 
+        default_package: share_handler_android
       ios:
-        default_package: share_handler_ios 
+        default_package: share_handler_ios
       # linux:
-      #   default_package: share_handler_linux 
+      #   default_package: share_handler_linux
       # macos:
-      #   default_package: share_handler_macos 
+      #   default_package: share_handler_macos
       # web:
-      #   default_package: share_handler_web 
+      #   default_package: share_handler_web
       # windows:
-      #   default_package: share_handler_windows 
+      #   default_package: share_handler_windows
 
 dependencies:
   flutter:
@@ -33,13 +33,13 @@ dependencies:
   # share_handler_ios:
   #   path: ../share_handler_ios
   # share_handler_linux:
-  #   path: ../share_handler_linux 
+  #   path: ../share_handler_linux
   # share_handler_macos:
-  #   path: ../share_handler_macos 
+  #   path: ../share_handler_macos
   # share_handler_web:
-  #   path: ../share_handler_web 
+  #   path: ../share_handler_web
   # share_handler_windows:
-  #   path: ../share_handler_windows 
+  #   path: ../share_handler_windows
   share_handler_platform_interface: ^0.0.6
   # share_handler_platform_interface:
   #   path: ../share_handler_platform_interface

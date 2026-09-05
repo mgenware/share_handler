@@ -25,4 +25,3 @@ flutter:
       android:
         package: com.shoutsocial.share_handler
         pluginClass: ShareHandlerPlugin
-      

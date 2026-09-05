@@ -91,11 +91,12 @@ open class ShareHandlerIosViewController: UIViewController {
         }
     }
 
-    public func getNewFileUrl(fileName: String) -> URL {
-        let newFileUrl = FileManager.default
+    public func getNewFileUrl(fileName: String) throws -> URL {
+        let containerUrl = FileManager.default
             .containerURL(forSecurityApplicationGroupIdentifier: ShareHandlerIosViewController.appGroupId)!
-            .appendingPathComponent(fileName)
-        return newFileUrl
+        let sharedFilesUrl = containerUrl.appendingPathComponent("flt_share_handler", isDirectory: true)
+        try FileManager.default.createDirectory(at: sharedFilesUrl, withIntermediateDirectories: true)
+        return sharedFilesUrl.appendingPathComponent(fileName)
     }
 
     public func handleText (content: NSExtensionItem, attachment: NSItemProvider, index: Int) async throws {
@@ -150,7 +151,7 @@ open class ShareHandlerIosViewController: UIViewController {
         }
 
         if let _fileName = fileName {
-            let newFileUrl = getNewFileUrl(fileName: _fileName)
+            let newFileUrl = try getNewFileUrl(fileName: _fileName)
             do {
                 if FileManager.default.fileExists(atPath: newFileUrl.path) {
                     try FileManager.default.removeItem(at: newFileUrl)
@@ -189,7 +190,7 @@ open class ShareHandlerIosViewController: UIViewController {
 
             // Always copy
             let fileName = getFileName(from: url, type: .video)
-            let newFileUrl = getNewFileUrl(fileName: fileName)
+            let newFileUrl = try getNewFileUrl(fileName: fileName)
             let copied = copyFile(at: url, to: newFileUrl)
             if(copied) {
                 sharedAttachments.append(SharedAttachment.init(path:  newFileUrl.absoluteString, type: .video))
@@ -207,7 +208,7 @@ open class ShareHandlerIosViewController: UIViewController {
 
             // Always copy
             let fileName = getFileName(from :url, type: .file)
-            let newFileUrl = getNewFileUrl(fileName: fileName)
+            let newFileUrl = try getNewFileUrl(fileName: fileName)
             let copied = copyFile(at: url, to: newFileUrl)
             if (copied) {
                 sharedAttachments.append(SharedAttachment.init(path:  newFileUrl.absoluteString, type: .file))
@@ -225,7 +226,7 @@ open class ShareHandlerIosViewController: UIViewController {
 
             // Always copy
             let fileName = getFileName(from :url, type: .file)
-            let newFileUrl = getNewFileUrl(fileName: fileName)
+            let newFileUrl = try getNewFileUrl(fileName: fileName)
             let copied = copyFile(at: url, to: newFileUrl)
             if (copied) {
                 sharedAttachments.append(SharedAttachment.init(path:  newFileUrl.absoluteString, type: .file))

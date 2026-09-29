@@ -40,13 +40,16 @@ void main() {
     messenger.setMockMethodCallHandler(filesChannel, null);
   });
 
-  test('normal launch clears the plugin cache once', () async {
+  test('null initial media leaves cache clearing to the app', () async {
     final handler = ShareHandlerIosPlatform();
 
     expect(await handler.getInitialSharedMedia(), isNull);
-    expect(clearCacheCalls, 1);
+    expect(clearCacheCalls, 0);
 
     expect(await handler.getInitialSharedMedia(), isNull);
+    expect(clearCacheCalls, 0);
+
+    await ShareHandlerIosPlatform.clearCache();
     expect(clearCacheCalls, 1);
   });
 

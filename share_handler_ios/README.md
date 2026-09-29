@@ -12,3 +12,15 @@ This package is the endorsed implementation of the `share_handler` plugin, so it
 dependencies:
   share_handler: 
 ```
+
+On iOS, `getInitialSharedMedia()` does not clear cached files. After it returns
+`null`, your app can explicitly clear the previous cache:
+
+```dart
+final media = await ShareHandlerPlatform.instance.getInitialSharedMedia();
+if (media == null) {
+  await ShareHandlerIosPlatform.clearCache();
+}
+```
+
+When using the `share_handler` package, call `ShareHandler.clearCache()` instead.

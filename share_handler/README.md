@@ -270,6 +270,9 @@ class _MyAppState extends State<MyApp> {
   Future<void> initPlatformState() async {
     final handler = ShareHandlerPlatform.instance;
     media = await handler.getInitialSharedMedia();
+    if (Platform.isIOS && media == null) {
+      await ShareHandler.clearCache();
+    }
 
     handler.sharedMediaStream.listen((SharedMedia media) {
       if (!mounted) return;

@@ -8,7 +8,6 @@ class ShareHandlerIosPlatform extends ShareHandlerPlatform {
   static const MethodChannel _filesChannel = MethodChannel(
     'com.shoutsocial.share_handler/sharedFiles',
   );
-  bool _checkedInitialMedia = false;
   static const EventChannel eventChannel = EventChannel(
     "com.shoutsocial.share_handler/sharedMediaStream",
   );
@@ -19,15 +18,8 @@ class ShareHandlerIosPlatform extends ShareHandlerPlatform {
   }
 
   @override
-  Future<SharedMedia?> getInitialSharedMedia() async {
-    final SharedMedia? result = await _api.getInitialSharedMedia();
-    if (!_checkedInitialMedia) {
-      _checkedInitialMedia = true;
-      if (result == null) {
-        await ShareHandlerIosPlatform.clearCache();
-      }
-    }
-    return result;
+  Future<SharedMedia?> getInitialSharedMedia() {
+    return _api.getInitialSharedMedia();
   }
 
   static Future<void> clearCache() {

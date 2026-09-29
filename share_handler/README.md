@@ -119,7 +119,7 @@ iOS 16.0 or later is required. The share extension prefers in-place media files 
         <string>com.apple.share-services</string>
     </dict>
 </dict>
-</plist> 
+</plist>
 ```
 
 4. Add a group identifier to both the Runner and ShareExtension Targets
@@ -134,11 +134,11 @@ iOS 16.0 or later is required. The share extension prefers in-place media files 
    - Repeat the above 2 steps for the 'Runner' target
 6. Enable Swift Package Manager in Flutter (`flutter config --enable-swift-package-manager`), then run `flutter pub get`. In Xcode, add the local package at `<project root>/ios/Flutter/ephemeral/Packages/.packages/share_handler_ios` to the project and link its `share-handler-ios-models` product to the `ShareExtension` target. Flutter generates that package path when resolving the iOS plugin; it also links the main plugin to the Runner target.
 
-7. In Xcode, replace the contents of ShareExtension/ShareViewController.swift with the following code. The share extension doesn't launch a UI of its own, instead it serializes the shared content/media and saves it to the groups shared preferences, then opens a deep link into the full app so your flutter/dart code can then read the serialized data and handle it accordingly. 
+7. In Xcode, replace the contents of ShareExtension/ShareViewController.swift with the following code. The share extension doesn't launch a UI of its own, instead it serializes the shared content/media and saves it to the groups shared preferences, then opens a deep link into the full app so your flutter/dart code can then read the serialized data and handle it accordingly.
 
 ```swift
 import share_handler_ios_models
-    
+
 class ShareViewController: ShareHandlerIosViewController {}
 ```
 

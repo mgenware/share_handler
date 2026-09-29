@@ -39,9 +39,11 @@ abstract class ShareHandlerPlatform extends PlatformInterface {
 
   /// Resets the initial shared media to null to prevent duplicate handling.
   Future<void> resetInitialSharedMedia() {
-    throw UnimplementedError('resetInitialSharedMedia has not been implemented.');
+    throw UnimplementedError(
+        'resetInitialSharedMedia has not been implemented.');
   }
 
   /// Stream that can be listened to for shared media when the app is already running.
-  Stream<SharedMedia> get sharedMediaStream => throw UnimplementedError('mediaStream has not been implemented.');
+  Stream<SharedMedia> get sharedMediaStream =>
+      throw UnimplementedError('mediaStream has not been implemented.');
 }

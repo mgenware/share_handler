@@ -1,7 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/services.dart';
-import 'dart:io';
 
 enum SharedAttachmentType {
   image,
@@ -100,7 +100,9 @@ class SharedMedia {
           ?.map((e) => SharedAttachment.decode(e as Map<Object?, Object?>))
           .cast<SharedAttachment?>()
           .toList(),
-      recipientIdentifiers: (pigeonMap['recipientIdentifiers'] as List<Object?>?)?.cast<String?>(),
+      recipientIdentifiers:
+          (pigeonMap['recipientIdentifiers'] as List<Object?>?)
+              ?.cast<String?>(),
       conversationIdentifier: pigeonMap['conversationIdentifier'] as String?,
       content: pigeonMap['content'] as String?,
       speakableGroupName: pigeonMap['speakableGroupName'] as String?,
@@ -151,7 +153,8 @@ class ShareHandlerApi {
   /// Constructor for [ShareHandlerApi].  The [binaryMessenger] named argument is
   /// available for dependency injection.  If it is left null, the default
   /// BinaryMessenger will be used which routes to the host platform.
-  ShareHandlerApi({BinaryMessenger? binaryMessenger}) : _binaryMessenger = binaryMessenger;
+  ShareHandlerApi({BinaryMessenger? binaryMessenger})
+      : _binaryMessenger = binaryMessenger;
 
   final BinaryMessenger? _binaryMessenger;
 
@@ -161,14 +164,16 @@ class ShareHandlerApi {
     final BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
         'dev.flutter.pigeon.ShareHandlerApi.getInitialSharedMedia', codec,
         binaryMessenger: _binaryMessenger);
-    final Map<Object?, Object?>? replyMap = await channel.send(null) as Map<Object?, Object?>?;
+    final Map<Object?, Object?>? replyMap =
+        await channel.send(null) as Map<Object?, Object?>?;
     if (replyMap == null) {
       throw PlatformException(
         code: 'channel-error',
         message: 'Unable to establish connection on channel.',
       );
     } else if (replyMap['error'] != null) {
-      final Map<Object?, Object?> error = (replyMap['error'] as Map<Object?, Object?>?)!;
+      final Map<Object?, Object?> error =
+          (replyMap['error'] as Map<Object?, Object?>?)!;
       throw PlatformException(
         code: (error['code'] as String?)!,
         message: error['message'] as String?,
@@ -189,14 +194,16 @@ class ShareHandlerApi {
     final BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
         'dev.flutter.pigeon.ShareHandlerApi.recordSentMessage', codec,
         binaryMessenger: _binaryMessenger);
-    final Map<Object?, Object?>? replyMap = await channel.send(<Object?>[argMedia]) as Map<Object?, Object?>?;
+    final Map<Object?, Object?>? replyMap =
+        await channel.send(<Object?>[argMedia]) as Map<Object?, Object?>?;
     if (replyMap == null) {
       throw PlatformException(
         code: 'channel-error',
         message: 'Unable to establish connection on channel.',
       );
     } else if (replyMap['error'] != null) {
-      final Map<Object?, Object?> error = (replyMap['error'] as Map<Object?, Object?>?)!;
+      final Map<Object?, Object?> error =
+          (replyMap['error'] as Map<Object?, Object?>?)!;
       throw PlatformException(
         code: (error['code'] as String?)!,
         message: error['message'] as String?,
@@ -211,14 +218,16 @@ class ShareHandlerApi {
     final BasicMessageChannel<Object?> channel = BasicMessageChannel<Object?>(
         'dev.flutter.pigeon.ShareHandlerApi.resetInitialSharedMedia', codec,
         binaryMessenger: _binaryMessenger);
-    final Map<Object?, Object?>? replyMap = await channel.send(null) as Map<Object?, Object?>?;
+    final Map<Object?, Object?>? replyMap =
+        await channel.send(null) as Map<Object?, Object?>?;
     if (replyMap == null) {
       throw PlatformException(
         code: 'channel-error',
         message: 'Unable to establish connection on channel.',
       );
     } else if (replyMap['error'] != null) {
-      final Map<Object?, Object?> error = (replyMap['error'] as Map<Object?, Object?>?)!;
+      final Map<Object?, Object?> error =
+          (replyMap['error'] as Map<Object?, Object?>?)!;
       throw PlatformException(
         code: (error['code'] as String?)!,
         message: error['message'] as String?,

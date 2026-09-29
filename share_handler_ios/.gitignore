@@ -10,6 +10,8 @@
 .buildlog/
 .history
 .svn/
+.build/
+.swiftpm/
 
 # IntelliJ related
 *.iml

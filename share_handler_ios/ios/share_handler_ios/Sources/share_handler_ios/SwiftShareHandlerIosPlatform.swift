@@ -3,6 +3,14 @@ import Intents
 import UIKit
 import share_handler_ios_models
 
+#if SWIFT_PACKAGE
+    public class ShareHandlerIosPlatform: NSObject, FlutterPlugin {
+        public static func register(with registrar: FlutterPluginRegistrar) {
+            SwiftShareHandlerIosPlatform.register(with: registrar)
+        }
+    }
+#endif
+
 public class SwiftShareHandlerIosPlatform: NSObject, FlutterPlugin, FlutterSceneLifeCycleDelegate,
     FlutterStreamHandler, ShareHandlerApi
 {
@@ -14,6 +22,7 @@ public class SwiftShareHandlerIosPlatform: NSObject, FlutterPlugin, FlutterScene
     //     }
 
     static let kEventsChannel = "com.shoutsocial.share_handler/sharedMediaStream"
+    static let kFilesChannel = "com.shoutsocial.share_handler/sharedFiles"
 
     private var customSchemePrefix = "ShareMedia"
 
@@ -34,6 +43,37 @@ public class SwiftShareHandlerIosPlatform: NSObject, FlutterPlugin, FlutterScene
 
         let eventsChannel = FlutterEventChannel(name: kEventsChannel, binaryMessenger: messenger)
         eventsChannel.setStreamHandler(instance)
+
+        let filesChannel = FlutterMethodChannel(name: kFilesChannel, binaryMessenger: messenger)
+        filesChannel.setMethodCallHandler { call, result in
+            guard call.method == "clearCache" else {
+                result(FlutterMethodNotImplemented)
+                return
+            }
+            let appGroupId =
+                (Bundle.main.object(forInfoDictionaryKey: "AppGroupId") as? String)
+                ?? "group.\(Bundle.main.bundleIdentifier!)"
+            guard
+                let containerURL = FileManager.default.containerURL(
+                    forSecurityApplicationGroupIdentifier: appGroupId)
+            else {
+                result(nil)
+                return
+            }
+            let cacheURL = containerURL.appendingPathComponent(
+                "flt_share_handler", isDirectory: true)
+            do {
+                if FileManager.default.fileExists(atPath: cacheURL.path) {
+                    try FileManager.default.removeItem(at: cacheURL)
+                }
+                result(nil)
+            } catch {
+                result(
+                    FlutterError(
+                        code: "CACHE_CLEAR_FAILED", message: error.localizedDescription,
+                        details: nil))
+            }
+        }
 
         registrar.addApplicationDelegate(instance)
         registrar.addSceneDelegate(instance)
@@ -132,6 +172,10 @@ public class SwiftShareHandlerIosPlatform: NSObject, FlutterPlugin, FlutterScene
         options connectionOptions: UIScene.ConnectionOptions?
     ) -> Bool {
         guard let connectionOptions = connectionOptions else { return false }
+        let fileURLs = connectionOptions.urlContexts.map(\.url).filter(\.isFileURL)
+        if !fileURLs.isEmpty {
+            return handleFileURLs(fileURLs, setInitialData: true)
+        }
         for context in connectionOptions.urlContexts where hasMatchingSchemePrefix(url: context.url)
         {
             return handleUrl(url: context.url, setInitialData: true)
@@ -146,6 +190,10 @@ public class SwiftShareHandlerIosPlatform: NSObject, FlutterPlugin, FlutterScene
 
     public func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) -> Bool
     {
+        let fileURLs = URLContexts.map(\.url).filter(\.isFileURL)
+        if !fileURLs.isEmpty {
+            return handleFileURLs(fileURLs, setInitialData: false)
+        }
         for context in URLContexts where hasMatchingSchemePrefix(url: context.url) {
             return handleUrl(url: context.url, setInitialData: false)
         }
@@ -161,6 +209,9 @@ public class SwiftShareHandlerIosPlatform: NSObject, FlutterPlugin, FlutterScene
 
     private func handleUrl(url: URL?, setInitialData: Bool) -> Bool {
         if let url = url {
+            if url.isFileURL {
+                return handleFileURLs([url], setInitialData: setInitialData)
+            }
             //            let appDomain = Bundle.main.bundleIdentifier!
             let appGroupId =
                 (Bundle.main.object(forInfoDictionaryKey: "AppGroupId") as? String)
@@ -174,17 +225,14 @@ public class SwiftShareHandlerIosPlatform: NSObject, FlutterPlugin, FlutterScene
                 if let data = userDefaults?.object(forKey: sharedPreferencesKey) as? Data {
                     sharedMedia = try? JSONDecoder().decode(SharedMedia.self, from: data)
                 }
-            } else if url.absoluteString.hasPrefix("file://") {
-                sharedMedia = SharedMedia.init(
-                    attachments: [
-                        SharedAttachment.init(
-                            path: url.absoluteString, type: SharedAttachmentType.file)
-                    ], conversationIdentifier: nil, content: nil, speakableGroupName: nil,
-                    serviceName: nil, senderIdentifier: nil, imageFilePath: nil)
             }
 
             if let media = sharedMedia {
-                media.attachments?.forEach { $0.path = getAbsolutePath(for: $0.path) ?? $0.path }
+                media.attachments?.forEach {
+                    if let url = URL(string: $0.path), url.isFileURL {
+                        $0.path = String(url.absoluteString.dropFirst("file://".count))
+                    }
+                }
                 latestMedia = media
                 if setInitialData {
                     initialMedia = media
@@ -255,13 +303,20 @@ public class SwiftShareHandlerIosPlatform: NSObject, FlutterPlugin, FlutterScene
         return false
     }
 
-    private func getAbsolutePath(for identifier: String) -> String? {
-        if identifier.starts(with: "file://") || identifier.starts(with: "/var/mobile/Media")
-            || identifier.starts(with: "/private/var/mobile")
-        {
-            return identifier.replacingOccurrences(of: "file://", with: "")
+    private func handleFileURLs(_ urls: [URL], setInitialData: Bool) -> Bool {
+        let attachments = urls.map {
+            SharedAttachment(
+                path: String($0.absoluteString.dropFirst("file://".count)), type: .file)
         }
-        return nil
+        let media = SharedMedia(
+            attachments: attachments, conversationIdentifier: nil, content: nil,
+            speakableGroupName: nil, serviceName: nil, senderIdentifier: nil, imageFilePath: nil)
+        latestMedia = media
+        if setInitialData {
+            initialMedia = media
+        }
+        eventSink?(media.toDictionary())
+        return true
     }
 
     func getInitialSharedMedia(_ error: AutoreleasingUnsafeMutablePointer<FlutterError?>)

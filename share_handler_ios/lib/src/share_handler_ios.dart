@@ -5,8 +5,13 @@ import 'package:share_handler_platform_interface/share_handler_platform_interfac
 
 class ShareHandlerIosPlatform extends ShareHandlerPlatform {
   final ShareHandlerApi _api = ShareHandlerApi();
-  static const EventChannel eventChannel =
-      EventChannel("com.shoutsocial.share_handler/sharedMediaStream");
+  static const MethodChannel _filesChannel = MethodChannel(
+    'com.shoutsocial.share_handler/sharedFiles',
+  );
+  bool _checkedInitialMedia = false;
+  static const EventChannel eventChannel = EventChannel(
+    "com.shoutsocial.share_handler/sharedMediaStream",
+  );
   static Stream<SharedMedia>? _sharedMediaStream;
 
   static void registerWith() {
@@ -16,7 +21,17 @@ class ShareHandlerIosPlatform extends ShareHandlerPlatform {
   @override
   Future<SharedMedia?> getInitialSharedMedia() async {
     final SharedMedia? result = await _api.getInitialSharedMedia();
+    if (!_checkedInitialMedia) {
+      _checkedInitialMedia = true;
+      if (result == null) {
+        await ShareHandlerIosPlatform.clearCache();
+      }
+    }
     return result;
+  }
+
+  static Future<void> clearCache() {
+    return _filesChannel.invokeMethod<void>('clearCache');
   }
 
   @override
@@ -26,12 +41,14 @@ class ShareHandlerIosPlatform extends ShareHandlerPlatform {
     String? conversationImageFilePath,
     String? serviceName,
   }) {
-    return _api.recordSentMessage(SharedMedia(
-      conversationIdentifier: conversationIdentifier,
-      speakableGroupName: conversationName,
-      serviceName: serviceName,
-      imageFilePath: conversationImageFilePath,
-    ));
+    return _api.recordSentMessage(
+      SharedMedia(
+        conversationIdentifier: conversationIdentifier,
+        speakableGroupName: conversationName,
+        serviceName: serviceName,
+        imageFilePath: conversationImageFilePath,
+      ),
+    );
   }
 
   @override
@@ -41,11 +58,12 @@ class ShareHandlerIosPlatform extends ShareHandlerPlatform {
 
   @override
   Stream<SharedMedia> get sharedMediaStream {
-    _sharedMediaStream ??=
-        eventChannel.receiveBroadcastStream().map<SharedMedia>((dynamic event) {
-      final Map<dynamic, dynamic> map = event as Map<dynamic, dynamic>;
-      return SharedMedia.decode(map);
-    });
+    _sharedMediaStream ??= eventChannel
+        .receiveBroadcastStream()
+        .map<SharedMedia>((dynamic event) {
+          final Map<dynamic, dynamic> map = event as Map<dynamic, dynamic>;
+          return SharedMedia.decode(map);
+        });
     return _sharedMediaStream!;
   }
 }

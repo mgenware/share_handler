@@ -8,7 +8,9 @@ First, add `share_handler` as a [dependency in your pubspec.yaml file](https://f
 
 ### iOS
 
-1. Add the following to `<project root>/ios/Runner/Info.plist`. It registers your app to open via a deep link that will be launched from the Share Extension. Also, for sharing photos, you will need access to the photo library.
+iOS 16.0 or later is required. The share extension prefers in-place media files and copies them without re-encoding. Providers can supply a temporary file when in-place access is unavailable. All iOS media attachments have type `SharedAttachmentType.file`. Text and links remain text content.
+
+1. Add the following to `<project root>/ios/Runner/Info.plist`. It registers your app to open via a deep link that will be launched from the Share Extension.
 
 ```xml
 <!-- Add for share_handler start -->
@@ -33,9 +35,6 @@ First, add `share_handler` as a [dependency in your pubspec.yaml file](https://f
         </array>
     </dict>
 </array>
-
-<key>NSPhotoLibraryUsageDescription</key>
-<string>Photos can be shared to and used in this app</string>
 
 <!-- Optional: Add/Customize for AirDrop support -->
 <key>LSSupportsOpeningDocumentsInPlace</key>
@@ -133,23 +132,7 @@ First, add `share_handler` as a [dependency in your pubspec.yaml file](https://f
    - Click the '+' icon and select 'Add User-Defined Setting'
    - Give it the key 'CUSTOM_GROUP_ID' and the value of the app group identifier that you gave to both targets in the previous step
    - Repeat the above 2 steps for the 'Runner' target
-6. Add the following code inside `<project root>/ios/Podfile` within the `target 'Runner' do` block, and then run `pod install` inside of `<project root>/ios`.
-
-```ruby
-target 'Runner' do
-  use_frameworks!
-  use_modular_headers!
-
-  flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
-
-  # share_handler addition start
-  target 'ShareExtension' do
-    inherit! :search_paths
-    pod "share_handler_ios_models", :path => ".symlinks/plugins/share_handler_ios/ios/Models"
-  end
-  # share_handler addition end
-end
-```
+6. Enable Swift Package Manager in Flutter (`flutter config --enable-swift-package-manager`), then run `flutter pub get`. In Xcode, add the local package at `<project root>/ios/Flutter/ephemeral/Packages/.packages/share_handler_ios` to the project and link its `share-handler-ios-models` product to the `ShareExtension` target. Flutter generates that package path when resolving the iOS plugin; it also links the main plugin to the Runner target.
 
 7. In Xcode, replace the contents of ShareExtension/ShareViewController.swift with the following code. The share extension doesn't launch a UI of its own, instead it serializes the shared content/media and saves it to the groups shared preferences, then opens a deep link into the full app so your flutter/dart code can then read the serialized data and handle it accordingly. 
 
@@ -340,6 +323,15 @@ class _MyAppState extends State<MyApp> {
                   return Text("${attachment?.type} Attachment: ${attachment?.path}");
                 }
               }),
+              if (Platform.isIOS && (media?.attachments?.isNotEmpty ?? false))
+                ElevatedButton(
+                  onPressed: () async {
+                    await ShareHandler.clearCache();
+                    if (!mounted) return;
+                    setState(() => media = null);
+                  },
+                  child: const Text('Done with shared files'),
+                ),
             ],
           ),
         ),

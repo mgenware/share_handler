@@ -326,15 +326,6 @@ class _MyAppState extends State<MyApp> {
                   return Text("${attachment?.type} Attachment: ${attachment?.path}");
                 }
               }),
-              if (Platform.isIOS && (media?.attachments?.isNotEmpty ?? false))
-                ElevatedButton(
-                  onPressed: () async {
-                    await ShareHandler.clearCache();
-                    if (!mounted) return;
-                    setState(() => media = null);
-                  },
-                  child: const Text('Done with shared files'),
-                ),
             ],
           ),
         ),

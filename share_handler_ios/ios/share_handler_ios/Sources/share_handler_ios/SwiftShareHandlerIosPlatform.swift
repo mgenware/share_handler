@@ -8,6 +8,13 @@ import share_handler_ios_models
         public static func register(with registrar: FlutterPluginRegistrar) {
             SwiftShareHandlerIosPlatform.register(with: registrar)
         }
+
+        public static func handleOpenURI(
+            _ context: UIOpenURLContext, setInitialData: Bool
+        ) -> Bool {
+            SwiftShareHandlerIosPlatform.handleOpenURI(
+                context, setInitialData: setInitialData)
+        }
     }
 #endif
 
@@ -77,6 +84,13 @@ public class SwiftShareHandlerIosPlatform: NSObject, FlutterPlugin, FlutterScene
 
         registrar.addApplicationDelegate(instance)
         registrar.addSceneDelegate(instance)
+    }
+
+    public static func handleOpenURI(
+        _ context: UIOpenURLContext, setInitialData: Bool
+    ) -> Bool {
+        guard context.url.isFileURL else { return false }
+        return instance.handleFileURLs([context.url], setInitialData: setInitialData)
     }
 
     public func onListen(
@@ -172,16 +186,12 @@ public class SwiftShareHandlerIosPlatform: NSObject, FlutterPlugin, FlutterScene
         options connectionOptions: UIScene.ConnectionOptions?
     ) -> Bool {
         guard let connectionOptions = connectionOptions else { return false }
-        let fileURLs = connectionOptions.urlContexts.map(\.url).filter(\.isFileURL)
-        if !fileURLs.isEmpty {
-            return handleFileURLs(fileURLs, setInitialData: true)
-        }
-        for context in connectionOptions.urlContexts where hasMatchingSchemePrefix(url: context.url)
-        {
+        for context in connectionOptions.urlContexts
+        where !context.url.isFileURL && hasMatchingSchemePrefix(url: context.url) {
             return handleUrl(url: context.url, setInitialData: true)
         }
         for activity in connectionOptions.userActivities {
-            if let url = activity.webpageURL, hasMatchingSchemePrefix(url: url) {
+            if let url = activity.webpageURL, !url.isFileURL, hasMatchingSchemePrefix(url: url) {
                 return handleUrl(url: url, setInitialData: true)
             }
         }
@@ -190,18 +200,17 @@ public class SwiftShareHandlerIosPlatform: NSObject, FlutterPlugin, FlutterScene
 
     public func scene(_ scene: UIScene, openURLContexts URLContexts: Set<UIOpenURLContext>) -> Bool
     {
-        let fileURLs = URLContexts.map(\.url).filter(\.isFileURL)
-        if !fileURLs.isEmpty {
-            return handleFileURLs(fileURLs, setInitialData: false)
-        }
-        for context in URLContexts where hasMatchingSchemePrefix(url: context.url) {
+        for context in URLContexts
+        where !context.url.isFileURL && hasMatchingSchemePrefix(url: context.url) {
             return handleUrl(url: context.url, setInitialData: false)
         }
         return false
     }
 
     public func scene(_ scene: UIScene, continue userActivity: NSUserActivity) -> Bool {
-        guard let url = userActivity.webpageURL, hasMatchingSchemePrefix(url: url) else {
+        guard let url = userActivity.webpageURL, !url.isFileURL,
+            hasMatchingSchemePrefix(url: url)
+        else {
             return false
         }
         return handleUrl(url: url, setInitialData: true)
